@@ -1,0 +1,76 @@
+﻿@page "/booklist"
+@using BlazorApp.Shared.Entities
+@inject HttpClient Http
+
+<label>Title</label>
+<input type="text" @bind="title" />
+<label>Author</label>
+<input type="text" @bind="author" />
+<button @onclick="Add">Add</button>
+
+@if (books == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Update</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in books)
+            {
+                <tr>
+                    <td>@book.BookId</td>
+                    <td>@book.Title</td>
+                    <td>@book.Author</td>
+                    <td><button @onclick="() => Update(book.BookId)">Update</button></td>
+                    <td><button @onclick="() => Delete(book.BookId)">Delete</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Book[] books;
+
+    private string title;
+    private string author;
+
+    protected override async Task OnInitializedAsync()
+    {
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+    }
+
+    private async Task Add()
+    {
+        var book = new Book() { Title = title, Author = author };
+        await Http.PostAsJsonAsync<Book>("api/Books", book);
+        title = "";
+        author = "";
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+    }
+
+    public async Task Delete(int bookId)
+    {
+        await Http.DeleteAsync($"api/Books/{bookId}");
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+    }
+
+    public async Task Update(int bookId)
+    {
+        var book = new Book() { BookId = bookId, Title = title, Author = author };
+        await Http.PutAsJsonAsync<Book>("api/Books", book);
+        title = "";
+        author = "";
+        books = await Http.GetFromJsonAsync<Book[]>("api/Books");
+    }
+}
